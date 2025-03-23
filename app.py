@@ -1,10 +1,12 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from models.user import User
+from database import db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "your_secret_key" # Utilizado pelo Flask para proteger as informações armazenadas.
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-db = SQLAlchemy(app) # Criação da instância da classe SQLAlchemy (objeto) para conexão ao banco de dados.
+
+db.init_app(app) # Importa o db do arquivo database e inicia a variável app onde estão as configurações do banco.
 
 @app.route("/hello-world", methods=["GET"])
 def hello_world():
