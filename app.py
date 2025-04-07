@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 from models.user import User
 from database import db
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
+import bcrypt
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "your_secret_key" # Utilizado pelo Flask para proteger as informações armazenadas.
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///databases.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:gui123@127.0.0.1:3306/flask-crud' # Troca de banco de dados para o mysql utilizando a biblioteca pymysql
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -25,7 +26,7 @@ def login():
 
   if username and password:
     user = User.query.filter_by(username=username).first() # Busca do username e user vai conter todas as informações do usuário.
-    if user and user.password == password:
+    if user and bcrypt.checkpw(str.encode(password), str.encode(user.password)):
       login_user(user)
       print(current_user.is_authenticated)
       return jsonify({"message":"autenticação realizada com sucesso!"})
@@ -46,7 +47,8 @@ def create_user():
   adressemail = data.get("adressemail")
 
   if username and password:
-    user = User(username=username, password=password, adressemail=adressemail)
+    hash_password = bcrypt.hashpw(str.encode(password), bcrypt.gensalt()) 
+    user = User(username=username, password=hash_password, adressemail=adressemail, role='user')
     db.session.add(user)
     db.session.commit()
     return jsonify({"message": "Usuário cadastrado com sucesso!"})
@@ -69,6 +71,9 @@ def update_user(id_user):
   data = request.json
   user = User.query.get(id_user)
 
+  if id_user != current_user.id and current_user.role == 'user':
+    return jsonify({"message": "Usuário na operação sem permissão."}), 403
+  
   if user and data.get("password"):
     user.password = data.get("password")
     user.adressemail = data.get("adressemail")
@@ -78,8 +83,12 @@ def update_user(id_user):
   return jsonify({"message": "Usuário não encontrado!"}),404
 
 @app.route('/user/<int:id_user>', methods=['DELETE'])
+@login_required
 def delete_user(id_user):
   user = User.query.get(id_user)
+
+  if current_user.role != 'admin':
+    return jsonify({"message": "Usuário sem permissão de administrador para esta ação."}), 403
 
   if id_user == current_user.id:
     return jsonify({"message": "Sem permissão para deletar o usuário."}), 403

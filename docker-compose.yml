@@ -1,0 +1,16 @@
+services:
+  db: # Definição do serviço chamado 'db'
+    image: mysql:latest # Imagem o que manda, menciona o que quer subir, no caso do banco de dados mysql na última versão possível (latest).
+    restart: always # Definição de quando precisa reiniciar (sempre) quando houver mudança de configuração
+    environment:
+      MYSQL_USER: 'guihauck1998'
+      MYSQL_PASSWORD: 'gui123'
+      MYSQL_DATABASE: 'flask-crud' # Criação do banco de dados
+      MYSQL_ROOT_PASSWORD: 'gui123'
+    ports:
+      - "3306:3306" # Porta onde será o acesso da aplicação.
+    expose:
+    #abre a porta 3306 no contêiner
+      - '3306'
+    volumes:
+      - 'C:/Banco_docker/mysql_data:/var/lib/mysql' # Armazenamento de informações (persistência)
